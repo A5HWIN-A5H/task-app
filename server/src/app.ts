@@ -8,15 +8,27 @@ import { errorHandler } from './middleware/error.middleware';
 import adminRoutes from './routes/admin.routes';
 import taskRoutes from './routes/task.routes';
 
-
 const app: Application = express();
 
 app.use(helmet());
-app.use(cors({ origin: config.clientUrl, credentials: true }));
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || origin === config.clientUrl || origin.endsWith('.vercel.app')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 app.use(morgan('dev'));
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/admin', adminRoutes);
+
+
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/tasks', taskRoutes);
@@ -29,8 +41,6 @@ app.get('/api/v1/health', (req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
   });
 });
-
-app.use('/api/v1/auth', authRoutes);
 
 app.use(errorHandler);
 
